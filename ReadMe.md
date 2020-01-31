@@ -6,9 +6,9 @@ Config.txt holds the route info as seen in project description
 ### udpcontroller.java run with command:
 java udpcontroller.java
 
-### udpswitch.java run with command:
+### udpswitch.java run with command (make sure switches are run on different ports):
 java udpswitch.java <switchID> <controller hostname> <switch port> -f <neighbor ID> -v
-(make sure switches are run on different ports)
+  
 
 Any code commented out is for hostname functionality. Feel free to remove/add print statements and edit code.
 
