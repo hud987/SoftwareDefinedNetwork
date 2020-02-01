@@ -71,7 +71,8 @@ public class udpcontroller {
           HashMap<String, String> aliveSwitchNewNeighbors = new HashMap<String, String>();
           switchNeighborsAndBwMapFinal.get(aliveSwitchId).forEach((neighborSwitchId, bw) -> {
             if (switchHostnamePortAlive.get(neighborSwitchId).get(2).equals("1")){
-              aliveSwitchNewNeighbors.put(neighborSwitchId, bw);
+              String newNeighborSwitchId = neighborSwitchId;
+              aliveSwitchNewNeighbors.put(newNeighborSwitchId, bw);
             }
           });
           switchNeighborsAndBwMap.put(aliveSwitchId, aliveSwitchNewNeighbors);
