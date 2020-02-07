@@ -1,3 +1,5 @@
+package udp;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -19,7 +21,7 @@ public class udpcontroller {
 
   private static int PORT_CONTROLLER = 10000;
   private static Integer K = 5;
-  private static Integer M = 1;  
+  private static Integer M = 3;  
   private static InetAddress ip;
   private static DatagramSocket controller;
   private static Integer currentTime = 0;
@@ -32,6 +34,9 @@ public class udpcontroller {
   private static ConcurrentHashMap<String, Integer> switchLastConectedTime = new ConcurrentHashMap<String, Integer>();
   //( SwitchId:[ SwitchId:NextHop, SwitchId:NextHop,... ] , ...)
   private static HashMap<String, HashMap<String, String>> switchesAllNextHops = new HashMap<String, HashMap<String, String>>();
+  
+  //( SwitchID:[ SwitchID:failureTo], ...)
+  //private static HashMap<String, String> failedLinkList = new HashMap<String, String>();
   
   //controller isn't always sending packets so this thread isn't necessary
   public static class sendPackets implements Runnable {
@@ -54,6 +59,9 @@ public class udpcontroller {
         String[] switchPacketList = new String(SWITCH_PACKET.getData(), SWITCH_PACKET.getOffset(), SWITCH_PACKET.getLength()).split(" ");
 
         if (switchPacketList[0].equals("REGISTER_REQUEST")) {
+        	
+          System.out.println("is 2 alive???" + switchHostnamePortAlive.get("2").get(0) + switchHostnamePortAlive.get("2").get(1) + switchHostnamePortAlive.get("2").get(2));
+        	
           String aliveSwitchId = switchPacketList[1];
           String aliveSwitchHostname = switchPacketList[2];
           String aliveSwitchPort = Integer.toString(SWITCH_PACKET.getPort());
@@ -77,7 +85,10 @@ public class udpcontroller {
           });
           switchNeighborsAndBwMap.put(aliveSwitchId, aliveSwitchNewNeighbors);
 
+          System.out.println("is 2 alive???" + switchHostnamePortAlive.get("2").get(0) + switchHostnamePortAlive.get("2").get(1) + switchHostnamePortAlive.get("2").get(2));
+          
           sendREGISTER_RESPONSE(aliveSwitchId, aliveSwitchHostname, Integer.parseInt(aliveSwitchPort));
+          
           calculateRoutes();
           sendROUTE_UPDATE();
           
@@ -90,22 +101,57 @@ public class udpcontroller {
             //System.out.println("Switch isAlive: " + switchPacketList[i+1]);  
             //System.out.println(switchHostnamePortAlive.get(switchPacketList[i]).get(2));  
 
-            if (switchPacketList[i+1].equals("0") && switchHostnamePortAlive.get(switchPacketList[i]).get(2).equals("1")) {
+            //if (switchPacketList[i+1].equals("0") && switchHostnamePortAlive.get(switchPacketList[i]).get(2).equals("1")) {
+/*
+            if (switchPacketList[i+1].equals("0") && switchHostnamePortAlive.get(switchPacketList[i]).get(2).equals("0")) {
               String deadSwitchId = switchPacketList[i];
+              System.out.println(switchId + " " + switchPacketList[i] + " " + switchPacketList[i+1]);
               System.out.println("[CONTROLLER RECV] dead switch: " + deadSwitchId);
               
               ArrayList<String> switchInfo = switchHostnamePortAlive.get(deadSwitchId);
               switchInfo.set(2, "0");
-              switchHostnamePortAlive.put(switchId, switchInfo);
+              switchHostnamePortAlive.put(deadSwitchId, switchInfo);
 
               switchNeighborsAndBwMap.remove(deadSwitchId);
               switchNeighborsAndBwMap.forEach((id,hshmp) -> {
                 switchNeighborsAndBwMap.get(id).remove(deadSwitchId);
               });
-
-              calculateRoutes();
-              sendROUTE_UPDATE();
             }
+*/
+
+//              calculateRoutes();
+//              sendROUTE_UPDATE();
+
+
+            //if (switchPacketList[i+1].equals("0") && switchHostnamePortAlive.get(switchPacketList[i]).get(2).equals("1")) {
+        	  if (switchHostnamePortAlive.get(switchPacketList[i]).get(2).equals("0"))
+        		  continue;
+        	  else if (switchPacketList[i+1].equals("0")) {
+            	//A link is failed
+            	String failedSwitchId = switchPacketList[i];
+            	System.out.println(switchId + " " + switchPacketList[i] + " " + switchPacketList[i+1]);
+            	
+            	if(switchNeighborsAndBwMap.get(switchId).get(switchPacketList[i]) != null) {            		
+            		switchNeighborsAndBwMap.get(switchId).remove(failedSwitchId);      
+            		
+                	System.out.println("CONTROLLER RECV failed link from " + switchId + " " + failedSwitchId);
+            		calculateRoutes();
+            		sendROUTE_UPDATE();
+            	} else
+            		continue;
+              } else {
+                  if (switchNeighborsAndBwMap.get(switchId).get(switchPacketList[i]) != null)
+                	  continue;
+                  else {
+                	  String bw = switchNeighborsAndBwMapFinal.get(switchId).get(switchPacketList[i]);
+                      switchNeighborsAndBwMap.get(switchId).put(switchPacketList[i], bw);
+                      
+                      System.out.println("CONTROLLER RECV good link from " + switchId + " " + switchPacketList[i]);
+                      calculateRoutes();
+                      sendROUTE_UPDATE();
+                      }
+              }
+
           }            
         }
 
@@ -169,6 +215,7 @@ public class udpcontroller {
     try {
       System.out.println("[CONTROLLER  REG_RESP] Sending REGISTER_RESPONSE to switch " + switchId); 
       controller.send(REGISTER_RESPONSE);
+      System.out.println(registerResponseString);
     } catch (IOException e) {
       e.printStackTrace();
     }
@@ -345,12 +392,23 @@ public class udpcontroller {
       String switchHostname = request[2];
       String switchPort = Integer.toString(REGISTER_REQUEST.getPort());
       switchHostnamePortAlive.put(switchId, new ArrayList<String>(Arrays.asList( switchHostname, switchPort, "1" )) );
+      
+      //set failed link
+      /*
+      if (request.length > 2) {
+    	  String linkTo = request[4];
+    	  failedLinkList.put(switchId, linkTo);
+      }
+      */
       //System.out.println("Switch ID: " + switchId);
       //System.out.println("Switch Hostname: " + switchHostname);
       //System.out.println("Switch Port: " + switchPort);
     }
 
     System.out.println("[CONTROLLER] Connected to all switches"); 
+
+    // Update the map with failedLinkList
+    
     
     //REGISTER_RESPONSE format "REGISTER_RESPONSE SwitchID aliveFlag SwitchHostname SwitchPort SwitchID aliveFlag ..."
     switchHostnamePortAlive.entrySet().forEach( entry -> {
