@@ -10,13 +10,4 @@ Config.txt holds the route info as seen in project description
 (make sure switches are run on different ports):
 #### java udpswitch.java \<switchID> \<controller hostname> \<switch port> -f \<neighbor ID> -v
   
-
-
-Any code commented out is for hostname functionality. Feel free to remove/add print statements and edit code.
-
-
-Things left to impliment:
-- -f and -v commands
-- hostname functionality
-- disconnecting and reconnecting switches leads to route bugs
-- probably more...
+Controller updates routing map on each switch change
