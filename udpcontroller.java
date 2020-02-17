@@ -60,7 +60,7 @@ public class udpcontroller {
 
         if (switchPacketList[0].equals("REGISTER_REQUEST")) {
         	
-          System.out.println("is 2 alive???" + switchHostnamePortAlive.get("2").get(0) + switchHostnamePortAlive.get("2").get(1) + switchHostnamePortAlive.get("2").get(2));
+          // System.out.println("is 2 alive???" + switchHostnamePortAlive.get("2").get(0) + switchHostnamePortAlive.get("2").get(1) + switchHostnamePortAlive.get("2").get(2));
         	
           String aliveSwitchId = switchPacketList[1];
           String aliveSwitchHostname = switchPacketList[2];
@@ -85,7 +85,7 @@ public class udpcontroller {
           });
           switchNeighborsAndBwMap.put(aliveSwitchId, aliveSwitchNewNeighbors);
 
-          System.out.println("is 2 alive???" + switchHostnamePortAlive.get("2").get(0) + switchHostnamePortAlive.get("2").get(1) + switchHostnamePortAlive.get("2").get(2));
+          // System.out.println("is 2 alive???" + switchHostnamePortAlive.get("2").get(0) + switchHostnamePortAlive.get("2").get(1) + switchHostnamePortAlive.get("2").get(2));
           
           sendREGISTER_RESPONSE(aliveSwitchId, aliveSwitchHostname, Integer.parseInt(aliveSwitchPort));
           
@@ -129,7 +129,7 @@ public class udpcontroller {
         	  else if (switchPacketList[i+1].equals("0")) {
             	//A link is failed
             	String failedSwitchId = switchPacketList[i];
-            	System.out.println(switchId + " " + switchPacketList[i] + " " + switchPacketList[i+1]);
+            	// System.out.println(switchId + " " + switchPacketList[i] + " " + switchPacketList[i+1]);
             	
             	if(switchNeighborsAndBwMap.get(switchId).get(switchPacketList[i]) != null) {            		
             		switchNeighborsAndBwMap.get(switchId).remove(failedSwitchId);      
@@ -215,7 +215,7 @@ public class udpcontroller {
     try {
       System.out.println("[CONTROLLER  REG_RESP] Sending REGISTER_RESPONSE to switch " + switchId); 
       controller.send(REGISTER_RESPONSE);
-      System.out.println(registerResponseString);
+      // System.out.println(registerResponseString);
     } catch (IOException e) {
       e.printStackTrace();
     }
