@@ -1,0 +1,15 @@
+﻿Name: Shaoqi Jiang
+Partner: Michael Hudachek
+
+
+Project Description
+
+	Our project two files: udpcontroller.java and udpswitch.java. We can implement all functionality required: first both controller and switches run correctly and after registration, all switches receive their correct route tables. If a switch disconnects, the controller can update the map and all switches can receive their new route tables. If the dead switch restarts, the controller can update the map and all switches can receive their new route tables. If a switch runs with -f mode, the controller can update the map after first registration and update route tables for all switches. The -v mode can check the package information of a switch.
+	A remediation is that when a switch dead, the neighbors’ switch would first detect the link failure (since keep_alive between switches is sent every K seconds). Thus it needs some rounds to adjust the map. After the self-correctness, all switches can receive their right route tables.
+	For our project, since we only tested on one host. We set if the host name is demo, the controller and switches would be on same host.
+
+
+Update: 02/20/2020
+
+	In demo session, instructor found that our widest path algorithm could not implement well. Later on Thursday, Michael figured out the problem of the algorithm and solved it successfully.
+	There are two changes to the initial submission. First, it checks if the current node is the end node while previously it checked if the neighbor was the end node. If a neighbor was the end node, the algorithm would stop before finding the widest path to that node. Second, updating the bandwidth at each node was changed to accept the largest bandwidth path to that node, unless the node held the default max value, in which case the lower value is accepted.

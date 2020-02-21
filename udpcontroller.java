@@ -60,7 +60,7 @@ public class udpcontroller {
 
         if (switchPacketList[0].equals("REGISTER_REQUEST")) {
         	
-          System.out.println("is 2 alive???" + switchHostnamePortAlive.get("2").get(0) + switchHostnamePortAlive.get("2").get(1) + switchHostnamePortAlive.get("2").get(2));
+          // System.out.println("is 2 alive???" + switchHostnamePortAlive.get("2").get(0) + switchHostnamePortAlive.get("2").get(1) + switchHostnamePortAlive.get("2").get(2));
         	
           String aliveSwitchId = switchPacketList[1];
           String aliveSwitchHostname = switchPacketList[2];
@@ -85,7 +85,7 @@ public class udpcontroller {
           });
           switchNeighborsAndBwMap.put(aliveSwitchId, aliveSwitchNewNeighbors);
 
-          System.out.println("is 2 alive???" + switchHostnamePortAlive.get("2").get(0) + switchHostnamePortAlive.get("2").get(1) + switchHostnamePortAlive.get("2").get(2));
+          // System.out.println("is 2 alive???" + switchHostnamePortAlive.get("2").get(0) + switchHostnamePortAlive.get("2").get(1) + switchHostnamePortAlive.get("2").get(2));
           
           sendREGISTER_RESPONSE(aliveSwitchId, aliveSwitchHostname, Integer.parseInt(aliveSwitchPort));
           
@@ -129,7 +129,7 @@ public class udpcontroller {
         	  else if (switchPacketList[i+1].equals("0")) {
             	//A link is failed
             	String failedSwitchId = switchPacketList[i];
-            	System.out.println(switchId + " " + switchPacketList[i] + " " + switchPacketList[i+1]);
+            	// System.out.println(switchId + " " + switchPacketList[i] + " " + switchPacketList[i+1]);
             	
             	if(switchNeighborsAndBwMap.get(switchId).get(switchPacketList[i]) != null) {            		
             		switchNeighborsAndBwMap.get(switchId).remove(failedSwitchId);      
@@ -215,7 +215,7 @@ public class udpcontroller {
     try {
       System.out.println("[CONTROLLER  REG_RESP] Sending REGISTER_RESPONSE to switch " + switchId); 
       controller.send(REGISTER_RESPONSE);
-      System.out.println(registerResponseString);
+      // System.out.println(registerResponseString);
     } catch (IOException e) {
       e.printStackTrace();
     }
@@ -275,6 +275,70 @@ public class udpcontroller {
     return;
   }
 
+  
+  public static void widestPath(String start, String end) {
+	    //System.out.println("Running widest Path on switch pair " + start + " - " + end);
+	    
+	    HashSet<String> visited = new  HashSet<String>();
+	    HashMap<String, Integer> bw = new HashMap<String, Integer>();
+	    HashMap<String, String> previouslyVisited = new HashMap<String, String>();
+	    PriorityQueue<String> toVisit = new PriorityQueue<String>((a,b) -> bw.get(b) - bw.get(a));
+	    //fill distance hashmap with infinte value
+	    switchNeighborsAndBwMap.entrySet().forEach( entry -> {
+	      bw.put(entry.getKey(), Integer.MAX_VALUE);
+	    });
+	    toVisit.add(start);
+
+	    //check all switches
+	    while (toVisit.size() > 0) {
+	      String currentSwitch = toVisit.poll();
+	      visited.add(currentSwitch);
+
+	      //neighborSwitches format[ SwitchId:BW , SwitchId:BW , ... ]
+	      HashMap<String, String> neighborSwitches = switchNeighborsAndBwMap.get(currentSwitch);
+	      Integer currentBw = bw.get(currentSwitch);
+	      
+	      //check if current node is end
+	      if ( currentSwitch.equals(end) ) {
+	        //switchesAllNextHops = ( SwitchId:[ [SwitchId, NextHop],[SwitchId, NextHop],... ] , ...)
+	        //System.out.println("Found end switch " + currentSwitch + " with bandwidth " + bw.get(currentSwitch));
+	        //System.out.println("Next hop from end switch " + end + " is " + previouslyVisited.get(currentSwitch));
+	        switchesAllNextHops.get(end).put(start,previouslyVisited.get(currentSwitch));
+
+	        while (previouslyVisited.get(currentSwitch) != start) {
+	          currentSwitch = previouslyVisited.get(currentSwitch);
+	        }
+	        //System.out.println("Next hop from start switch " + start + " is " + currentSwitch);
+	        switchesAllNextHops.get(start).put(end,currentSwitch);
+	        return;
+	      }
+
+	      for (Map.Entry neighborSwitch : neighborSwitches.entrySet()){
+	        // System.out.println("neighbor " + neighborSwitch.getKey().toString() + "bw: ");
+	        // System.out.println(Integer.parseInt(neighborSwitch.getValue().toString()));
+	        if (!visited.contains(neighborSwitch.getKey())) {
+
+	          String neighborId = neighborSwitch.getKey().toString();
+	          Integer neighborBw = Integer.parseInt(neighborSwitch.getValue().toString());
+	          Integer incomingBw = Integer.min(neighborBw, currentBw);
+
+	          //replace bw to reach node with higher bw unless its the default value
+	          if (bw.get(neighborId) == Integer.MAX_VALUE) {
+	            bw.put(neighborId, neighborBw);
+	            previouslyVisited.put(neighborId,currentSwitch);
+	          } else if (incomingBw > bw.get(neighborId)){
+	            bw.put(neighborId, neighborBw);
+	            previouslyVisited.put(neighborId,currentSwitch);
+	          } 
+	          //have to update bw before using the comparator
+	          toVisit.add(neighborId);
+	        }
+	      }
+	    }
+	  }
+  
+  
+  /*
   public static void widestPath(String start, String end) {
     //System.out.println("Running widest Path on switch pair " + start + " - " + end);
     
@@ -329,6 +393,7 @@ public class udpcontroller {
       }
     }
   }
+  */
 
   public static void main(String[] args) throws SocketException, IOException {
     controller = new DatagramSocket(PORT_CONTROLLER);
